@@ -1,0 +1,7 @@
+apache-airflow
+pandas
+google-genai
+python-dotenv
+google-cloud-bigquery
+faker
+requests
