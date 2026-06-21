@@ -214,13 +214,12 @@ def load_all():
         ORDER BY revenue DESC
         LIMIT 10
     """)
-    synthetic_customers = query("SELECT * FROM synthetic_customers")
     weather = query("""
         SELECT * FROM weather_data
         ORDER BY ingested_at DESC
         LIMIT 10
     """)
-    return revenue_by_state, order_status, payment_types, monthly_orders, top_items, synthetic_customers, weather
+    return revenue_by_state, order_status, payment_types, monthly_orders, top_items, weather
 
 # ── Plotly theme ──────────────────────────────────────────────────────────────
 TEMPLATE = "plotly_dark"
@@ -237,7 +236,7 @@ with st.sidebar:
     page = st.radio(
         "Navigate",
         ["📦 Overview", "🗺️ Revenue by State", "📈 Order Trends",
-         "💳 Payments", "🧪 Data Quality", "🌤️ Weather Feed",
+         "💳 Payments", "🌤️ Weather Feed",
          "📤 Upload Data"],
         label_visibility="collapsed"
     )
@@ -265,7 +264,7 @@ if not check_db_ready() and page != "📤 Upload Data":
     st.stop()
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-revenue_by_state, order_status, payment_types, monthly_orders, top_items, synthetic_customers, weather = load_all()
+revenue_by_state, order_status, payment_types, monthly_orders, top_items, weather = load_all()
 
 # ──────────────────────────────────────────────────────────────────────────────
 # OVERVIEW
@@ -422,75 +421,7 @@ elif page == "💳 Payments":
             use_container_width=True
         )
 
-# ──────────────────────────────────────────────────────────────────────────────
-# DATA QUALITY
-# ──────────────────────────────────────────────────────────────────────────────
-elif page == "🧪 Data Quality":
-    st.markdown("## 🧪 Data Quality Report")
-    st.markdown("Olist real data vs Faker-generated synthetic data — side by side.")
 
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown('<div class="section-header">✅ Olist Customers (Real Data)</div>', unsafe_allow_html=True)
-        olist_df = query("SELECT * FROM customers")
-        olist_total = len(olist_df)
-        olist_dupes = olist_df.duplicated().sum()
-        olist_nulls = olist_df['customer_state'].isnull().sum()
-        st.metric("Total Rows",       f"{olist_total:,}")
-        st.metric("Duplicate Rows",   f"{olist_dupes:,}")
-        st.metric("Null States",       f"{olist_nulls:,}")
-
-        olist_error_rate = ((olist_dupes + olist_nulls) / olist_total) * 100 if olist_total > 0 else 0
-        olist_score = max(0.0, 10.0 - (olist_error_rate * 1.0))
-        olist_color = "#34d399" if olist_score >= 8.0 else "#f87171"
-
-        st.markdown(f"""
-        <div class="quality-card">
-            <strong>Quality Score: </strong>
-            <span style="color:{olist_color}; font-size:1.4rem; font-weight:700;">{olist_score:.1f} / 10</span><br>
-            <small style="color:rgba(255,255,255,0.5);">Deducts 1 point per 1% error rate (Duplicates + Nulls)</small>
-        </div>""", unsafe_allow_html=True)
-
-    with col2:
-        st.markdown('<div class="section-header">⚠️ Synthetic Customers (Faker Data)</div>', unsafe_allow_html=True)
-        syn_total  = len(synthetic_customers)
-        syn_dupes  = synthetic_customers.duplicated().sum()
-        if 'email' in synthetic_customers.columns:
-            syn_bad_email = syn_total - synthetic_customers['email'].apply(is_valid_email).sum()
-        else:
-            syn_bad_email = 0
-        st.metric("Total Rows",       f"{syn_total:,}")
-        st.metric("Duplicate Rows",   f"{syn_dupes:,}", delta=f"+{syn_dupes} ⬆", delta_color="inverse")
-        st.metric("Invalid Emails",   f"{syn_bad_email:,}", delta=f"+{syn_bad_email} ⬆", delta_color="inverse")
-
-        syn_error_rate = ((syn_dupes + syn_bad_email) / syn_total) * 100 if syn_total > 0 else 0
-        syn_score = max(0.0, 10.0 - (syn_error_rate * 1.0))
-        syn_color = "#34d399" if syn_score >= 8.0 else "#f87171"
-
-        st.markdown(f"""
-        <div class="quality-card">
-            <strong>Quality Score: </strong>
-            <span style="color:{syn_color}; font-size:1.4rem; font-weight:700;">{syn_score:.1f} / 10</span><br>
-            <small style="color:rgba(255,255,255,0.5);">Deducts 1 point per 1% error rate (Duplicates + Invalid Emails)</small>
-        </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown('<div class="section-header">Synthetic Data Preview</div>', unsafe_allow_html=True)
-    st.dataframe(synthetic_customers.head(20), use_container_width=True)
-
-    # Bar comparison chart
-    compare_df = pd.DataFrame({
-        'Dataset': ['Olist Customers', 'Synthetic Customers'],
-        'Duplicates': [int(olist_dupes), int(syn_dupes)],
-        'Invalid Emails / Nulls': [int(olist_nulls), int(syn_bad_email)],
-    })
-    compare_melted = compare_df.melt(id_vars='Dataset', var_name='Issue', value_name='Count')
-    fig = px.bar(compare_melted, x='Dataset', y='Count', color='Issue',
-                 barmode='group', template=TEMPLATE, color_discrete_sequence=[PRIMARY, ACCENT],
-                 title='Data Quality Issues: Olist vs Synthetic')
-    fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
-    st.plotly_chart(fig, use_container_width=True)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # WEATHER FEED
@@ -498,6 +429,17 @@ elif page == "🧪 Data Quality":
 elif page == "🌤️ Weather Feed":
     st.markdown("## 🌤️ Live Weather Feed")
     st.markdown("Real-time weather data ingested from the [Open-Meteo API](https://open-meteo.com/) — Sao Paulo, Brazil.")
+
+    st.markdown("---")
+    if st.button("🌦️ Fetch Live Weather Now", type="primary"):
+        import sys, os
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+        from ingestion.extract_weather import extract_and_load_weather
+        
+        with st.spinner("Fetching live weather..."):
+            extract_and_load_weather(DB_PATH)
+        st.cache_data.clear()
+        st.rerun()
 
     if not weather.empty:
         col1, col2, col3 = st.columns(3)
