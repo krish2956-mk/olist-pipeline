@@ -143,6 +143,17 @@ hr {
 # ── Database Helper ───────────────────────────────────────────────────────────
 DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'ecommerce.db')
 
+def check_db_ready():
+    if not os.path.exists(DB_PATH): return False
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table';", conn)
+        conn.close()
+        required = {'customers', 'orders', 'items', 'payments'}
+        return required.issubset(set(tables['name']))
+    except:
+        return False
+
 @st.cache_data(ttl=300)
 def query(sql):
     try:
@@ -151,7 +162,6 @@ def query(sql):
         conn.close()
         return df
     except Exception as e:
-        st.error(f"Query failed: {e}")
         return pd.DataFrame()
 
 def is_valid_email(email):
@@ -246,6 +256,13 @@ with st.sidebar:
     if st.button("🔄 Refresh Data"):
         st.cache_data.clear()
         st.rerun()
+
+# ── Boot Check ─────────────────────────────────────────────────────────────────
+if not check_db_ready() and page != "📤 Upload Data":
+    st.markdown("## 🛑 Database Not Found!")
+    st.markdown("### Welcome to the Cloud Deployment!")
+    st.info("Because this is a fresh server, the database is currently empty. Please navigate to **📤 Upload Data** in the sidebar to upload your initial CSV datasets and trigger the Gemini AI Validation pipeline.")
+    st.stop()
 
 # ── Load data ─────────────────────────────────────────────────────────────────
 revenue_by_state, order_status, payment_types, monthly_orders, top_items, synthetic_customers, weather = load_all()
