@@ -1,8 +1,12 @@
-import sqlite3
+import sys
+import os
 import pandas as pd
 import os
 
-def generate_summary_report(db_path='ecommerce.db', output_path='summary_report.csv'):
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
+
+def generate_summary_report(db_path=None, output_path='summary_report.csv'):
     """
     Executes a SQL join across the Olist tables, prints a summary, and exports to CSV.
     """
@@ -10,7 +14,7 @@ def generate_summary_report(db_path='ecommerce.db', output_path='summary_report.
         print(f"Database {db_path} not found. Skip report generation.")
         return
 
-    conn = sqlite3.connect(db_path)
+    conn = get_connection(db_path)
     
     query = """
     SELECT 

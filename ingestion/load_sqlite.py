@@ -1,11 +1,17 @@
-import sqlite3
+import sys
+import os
 import pandas as pd
 
-def load_dataframes_to_sqlite(dfs, db_path='ecommerce.db', prefix=''):
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
+
+def load_dataframes_to_sqlite(dfs, db_path=None, prefix=''):
     """
-    Loads a dictionary of DataFrames into SQLite with idempotency guards (REPLACE).
+    Loads a dictionary of DataFrames into the configured database with
+    idempotency guards (REPLACE). The database backend is controlled by
+    db_config.py — no changes needed here when switching databases.
     """
-    conn = sqlite3.connect(db_path)
+    conn = get_connection(db_path)
     
     for name, df in dfs.items():
         table_name = f"{prefix}{name}"

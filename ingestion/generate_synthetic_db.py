@@ -1,9 +1,13 @@
 from faker import Faker
 import pandas as pd
-import sqlite3
+import sys
+import os
 import random
 
-def generate_synthetic_data(db_path='ecommerce.db', num_records=1000):
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
+
+def generate_synthetic_data(db_path=None, num_records=1000):
     """
     Generates synthetic orders data using Faker and injects intentional 
     data quality issues (duplicates, invalid emails) for demo purposes.
@@ -48,7 +52,7 @@ def generate_synthetic_data(db_path='ecommerce.db', num_records=1000):
         else:
             print(f"Validation Passed! Score: {score}/10")
     
-    conn = sqlite3.connect(db_path)
+    conn = get_connection(db_path)
     # Prefix tables with synthetic_
     df_customers.to_sql('synthetic_customers', conn, if_exists='replace', index=False)
     conn.close()

@@ -6,6 +6,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def _get_client():
+    """Returns a Gemini client, or None if no API key is configured."""
+    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        return None
+    return genai.Client(api_key=api_key)
+
 def validate_dataframe(df_name, df, sample_size=5):
     """
     Uses Gemini 1.5 Flash to validate a sample of the DataFrame and return a quality score.

@@ -1,6 +1,10 @@
-import sqlite3
+import sys
+import os
 import pandas as pd
 import re
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
 
 def is_valid_email(email):
     if pd.isna(email):
@@ -8,11 +12,11 @@ def is_valid_email(email):
     # Simple regex for email validation
     return bool(re.match(r"[^@]+@[^@]+\.[^@]+", str(email)))
 
-def generate_quality_report(db_path='ecommerce.db'):
+def generate_quality_report(db_path=None):
     """
     Compares the data quality of Olist datasets vs Synthetic datasets side-by-side.
     """
-    conn = sqlite3.connect(db_path)
+    conn = get_connection(db_path)
     
     report = []
     

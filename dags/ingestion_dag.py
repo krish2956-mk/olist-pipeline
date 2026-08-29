@@ -1,12 +1,12 @@
 from airflow import DAG
 from airflow.providers.standard.operators.python import PythonOperator
 from datetime import datetime, timedelta
-import sqlite3
 import sys
 import os
 
 # Add the project root to the path so Airflow can import our modules
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
 
 from ingestion.extract_clean_olist import extract_and_clean_olist
 from ingestion.load_sqlite import load_dataframes_to_sqlite
@@ -24,7 +24,7 @@ def log_failure_to_db(context):
     dag_id = context.get('task_instance').dag_id
     execution_date = context.get('execution_date').isoformat()
     
-    conn = sqlite3.connect('/opt/airflow/ecommerce.db') # Path might vary based on Airflow setup
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS pipeline_errors (

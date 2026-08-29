@@ -5,7 +5,14 @@ import plotly.graph_objects as go
 import sqlite3
 import os
 import re
+import sys
 from datetime import datetime
+
+# Make the project root importable so `from dashboard import ...` works
+# regardless of the working directory Streamlit is launched from.
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from dashboard import executive_dashboard
+from db_config import get_connection
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -146,7 +153,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'ecommerce.db')
 def check_db_ready():
     if not os.path.exists(DB_PATH): return False
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table';", conn)
         conn.close()
         required = {'customers', 'orders', 'items', 'payments'}
@@ -157,7 +164,7 @@ def check_db_ready():
 @st.cache_data(ttl=300)
 def query(sql):
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = get_connection()
         df = pd.read_sql_query(sql, conn)
         conn.close()
         return df
@@ -579,7 +586,7 @@ elif page == "📤 Upload Data":
 
             if all_passed:
                 st.success("All datasets passed Gemini AI Validation! Loading into database...")
-                conn = sqlite3.connect(DB_PATH)
+                conn = get_connection()
                 for name, df in validated_dfs.items():
                     df.to_sql(name, conn, if_exists='replace', index=False)
                     st.markdown(f"Loaded **{len(df):,} rows** into table `{name}`")

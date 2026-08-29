@@ -1,13 +1,17 @@
 import requests
-import sqlite3
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from db_config import get_connection
 import json
 import pandas as pd
 from datetime import datetime
 
-def extract_and_load_weather(db_path='ecommerce.db'):
+def extract_and_load_weather(db_path=None):
     """
     Fetches live weather data from Open-Meteo, adds an ingested_at timestamp,
-    stores the raw JSON, and saves to SQLite.
+    stores the raw JSON, and saves to the configured database.
     """
     # Example: Weather in Sao Paulo (matching Olist geography roughly)
     url = "https://api.open-meteo.com/v1/forecast?latitude=-23.5505&longitude=-46.6333&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m"
@@ -34,7 +38,7 @@ def extract_and_load_weather(db_path='ecommerce.db'):
         
         df = pd.DataFrame([structured_data])
         
-        conn = sqlite3.connect(db_path)
+        conn = get_connection(db_path)
         # Append mode for time-series data
         df.to_sql('weather_data', conn, if_exists='append', index=False)
         conn.close()
