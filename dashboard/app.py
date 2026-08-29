@@ -147,18 +147,14 @@ hr {
 </style>
 """, unsafe_allow_html=True)
 
-# ── Database Helper ───────────────────────────────────────────────────────────
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'ecommerce.db')
-
 def check_db_ready():
-    if not os.path.exists(DB_PATH): return False
     try:
         conn = get_connection()
-        tables = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table';", conn)
+        # This cross-compatible query will fail if the 'customers' table does not exist
+        pd.read_sql_query("SELECT 1 FROM customers LIMIT 1", conn)
         conn.close()
-        required = {'customers', 'orders', 'items', 'payments'}
-        return required.issubset(set(tables['name']))
-    except:
+        return True
+    except Exception:
         return False
 
 @st.cache_data(ttl=300)
