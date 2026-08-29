@@ -236,7 +236,7 @@ def get_monthly_revenue(conn, filters):
     cte_sql, params = _filtered_orders_cte(filters)
     query = cte_sql + """
         SELECT
-            strftime('%Y-%m', fo.order_purchase_timestamp) AS month,
+            SUBSTRING(CAST(fo.order_purchase_timestamp AS TEXT), 1, 7) AS month,
             SUM(p.payment_value) AS revenue
         FROM filtered_orders fo
         JOIN payments p ON p.order_id = fo.order_id

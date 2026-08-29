@@ -198,13 +198,13 @@ def load_all():
         ORDER BY total_value DESC
     """)
     monthly_orders = query("""
-        SELECT strftime('%Y-%m', order_purchase_timestamp) as month,
+        SELECT SUBSTRING(CAST(order_purchase_timestamp AS TEXT), 1, 7) as month,
                COUNT(*) as orders,
                SUM(p.payment_value) as revenue
         FROM orders o
         JOIN payments p ON o.order_id = p.order_id
         WHERE order_purchase_timestamp IS NOT NULL
-          AND strftime('%Y', order_purchase_timestamp) >= '2017'
+          AND SUBSTRING(CAST(order_purchase_timestamp AS TEXT), 1, 4) >= '2017'
         GROUP BY month
         ORDER BY month
     """)
