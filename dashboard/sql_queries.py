@@ -123,7 +123,7 @@ def get_core_kpis(conn, filters):
         SELECT
             COUNT(DISTINCT fo.order_id) AS total_orders,
             COUNT(DISTINCT fo.customer_unique_id) AS total_customers,
-            ROUND(COALESCE(SUM(p.payment_value), 0), 2) AS total_revenue
+            COALESCE(SUM(p.payment_value), 0) AS total_revenue
         FROM filtered_orders fo
         JOIN payments p ON p.order_id = fo.order_id
     """
@@ -185,7 +185,7 @@ def get_payment_distribution(conn, filters):
         SELECT
             p.payment_type,
             COUNT(*) AS transaction_count,
-            ROUND(SUM(p.payment_value), 2) AS total_value
+            SUM(p.payment_value) AS total_value
         FROM filtered_orders fo
         JOIN payments p ON p.order_id = fo.order_id
         GROUP BY p.payment_type
@@ -201,7 +201,7 @@ def get_revenue_by_state(conn, filters):
         SELECT
             fo.customer_state,
             COUNT(DISTINCT fo.order_id) AS total_orders,
-            ROUND(SUM(p.payment_value), 2) AS total_revenue
+            SUM(p.payment_value) AS total_revenue
         FROM filtered_orders fo
         JOIN payments p ON p.order_id = fo.order_id
         GROUP BY fo.customer_state
@@ -220,7 +220,7 @@ def get_revenue_by_seller(conn, filters, top_n=10):
     query = cte_sql + f"""
         SELECT
             i.seller_id,
-            ROUND(SUM(i.price), 2) AS total_revenue,
+            SUM(i.price) AS total_revenue,
             COUNT(*) AS items_sold
         FROM filtered_orders fo
         JOIN items i ON i.order_id = fo.order_id
@@ -237,7 +237,7 @@ def get_monthly_revenue(conn, filters):
     query = cte_sql + """
         SELECT
             strftime('%Y-%m', fo.order_purchase_timestamp) AS month,
-            ROUND(SUM(p.payment_value), 2) AS revenue
+            SUM(p.payment_value) AS revenue
         FROM filtered_orders fo
         JOIN payments p ON p.order_id = fo.order_id
         GROUP BY month

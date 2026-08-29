@@ -176,7 +176,7 @@ def load_all():
     revenue_by_state = query("""
         SELECT c.customer_state,
                COUNT(DISTINCT o.order_id) as total_orders,
-               ROUND(SUM(p.payment_value), 2) as total_revenue
+               SUM(p.payment_value) as total_revenue
         FROM customers c
         JOIN orders o ON c.customer_id = o.customer_id
         JOIN payments p ON o.order_id = p.order_id
@@ -192,7 +192,7 @@ def load_all():
     """)
     payment_types = query("""
         SELECT payment_type, COUNT(*) as count,
-               ROUND(SUM(payment_value), 2) as total_value
+               SUM(payment_value) as total_value
         FROM payments
         GROUP BY payment_type
         ORDER BY total_value DESC
@@ -200,7 +200,7 @@ def load_all():
     monthly_orders = query("""
         SELECT strftime('%Y-%m', order_purchase_timestamp) as month,
                COUNT(*) as orders,
-               ROUND(SUM(p.payment_value),2) as revenue
+               SUM(p.payment_value) as revenue
         FROM orders o
         JOIN payments p ON o.order_id = p.order_id
         WHERE order_purchase_timestamp IS NOT NULL
@@ -211,7 +211,7 @@ def load_all():
     top_items = query("""
         SELECT seller_id,
                COUNT(*) as items_sold,
-               ROUND(SUM(price), 2) as revenue
+               SUM(price) as revenue
         FROM items
         GROUP BY seller_id
         ORDER BY revenue DESC
@@ -283,7 +283,7 @@ if page == "📦 Overview":
     # KPI Row
     total_orders    = query("SELECT COUNT(*) as c FROM orders")["c"].iloc[0]
     total_customers = query("SELECT COUNT(DISTINCT customer_id) as c FROM customers")["c"].iloc[0]
-    total_revenue   = query("SELECT ROUND(SUM(payment_value),2) as r FROM payments")["r"].iloc[0]
+    total_revenue   = query("SELECT SUM(payment_value) as r FROM payments")["r"].iloc[0]
     total_sellers   = query("SELECT COUNT(DISTINCT seller_id) as c FROM items")["c"].iloc[0]
 
     c1, c2, c3, c4 = st.columns(4)
